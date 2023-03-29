@@ -1,0 +1,9 @@
+body {
+  background-color: aquamarine; /* page background color */
+  color: darkblue; /* the text color */
+  font-family: Sono, Georgia, 'Times New Roman', Times, serif; /* the text font */
+}
+
+canvas {
+  background-color: black;
+}
