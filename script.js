@@ -1,9 +1,12 @@
 console.log('Javascript is running!')
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const play_canvas = document.getElementById("play_area");
+const play_ctx = play_canvas.getContext("2d");
 
-ctx.font = 'Sono, sans-serif';
+const back_canvas = document.getElementById("back");
+const back_ctx = back_canvas.getContext("2d");
+
+play_ctx.font = 'Sono, sans-serif';
 
 // Global Variables
 const WIDTH = 800;
@@ -15,8 +18,14 @@ const OBST_HEIGHT = 40;
 const PLAYER_W = 50;
 const PLAYER_H = 50;
 
+let frame = 0;
+let oldTimeStamp;
+let secondsPassed;
+let fps;
+
 const obstacles = [];
 const lasers = [];
+const stars = [];
 const objSettings = {
   gameState: 'running',
   hue: 0,
@@ -40,21 +49,22 @@ function resetGlobals(){
   objSettings.keyCount = 0;
 }
 
-function play() {
+function play(timeStamp) {
   let txt = '';
   let txt_width = 0;
   
   switch(objSettings.gameState) {
     case 'running':
 //    clear the canvas
-      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      play_ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      back_ctx.clearRect(0, 0, WIDTH, HEIGHT);
 //    draw player
       let hueOpp = (objSettings.hue + 180) % 360;
-      ctx.fillStyle = `hsl(${hueOpp}, 100%, 50%)`;
-      ctx.fillRect(player.x, player.y, PLAYER_W, PLAYER_H);
-      ctx.lineWidth = 10;
-      ctx.strokeStyle = `hsla(${hueOpp}, 100%, 50%, 0.3)`;
-      ctx.strokeRect(player.x - 5, player.y - 5, PLAYER_W + 10, PLAYER_H + 10);
+      play_ctx.fillStyle = `hsl(${hueOpp}, 100%, 50%)`;
+      play_ctx.fillRect(player.x, player.y, PLAYER_W, PLAYER_H);
+      play_ctx.lineWidth = 10;
+      play_ctx.strokeStyle = `hsla(${hueOpp}, 100%, 50%, 0.3)`;
+      play_ctx.strokeRect(player.x - 5, player.y - 5, PLAYER_W + 10, PLAYER_H + 10);
 
       if (obstacles.length > 0) {
         obstacles.forEach( obstacle => obstacle.place() );
@@ -77,35 +87,41 @@ function play() {
         });
       });
       
+//    add new stars at the edge of the canvas
+      if (frame % 10 === 0) {
+        stars.push(new Star(WIDTH));
+      }
+      
 //    laser/ammo text placed here to draw on top of obstacles
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 25px Sono';
+      play_ctx.fillStyle = 'white';
+      play_ctx.font = 'bold 25px Sono';
       txt = `Laser: ${objSettings.ammo}`;
-      txt_width = ctx.measureText(txt).width;
-      ctx.fillText(txt, WIDTH - txt_width - 10, 30);
+      txt_width = play_ctx.measureText(txt).width;
+      play_ctx.fillText(txt, WIDTH - txt_width - 10, 30);
       break;
     case 'won':
-      ctx.font = '60px Sono, sans-serif';
-      ctx.fillStyle = "lime";
+      play_ctx.font = '60px Sono, sans-serif';
+      play_ctx.fillStyle = "lime";
       txt = "You win!";
-      txt_width = ctx.measureText(txt).width;
-      ctx.fillText(txt , (WIDTH / 2) - (txt_width / 2), HEIGHT / 2);
-      ctx.font = '20px Sono, sans-serif';
+      txt_width = play_ctx.measureText(txt).width;
+      play_ctx.fillText(txt , (WIDTH / 2) - (txt_width / 2), HEIGHT / 2);
+      play_ctx.font = '20px Sono, sans-serif';
 
       resetGlobals();
       break;
     case 'lost':
-      // clear the canvas
-      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      // clear the canvases
+      play_ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      back_ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-      ctx.font = '48px Sono, sans-serif';
-      ctx.fillStyle = "red";
+      play_ctx.font = '48px Sono, sans-serif';
+      play_ctx.fillStyle = "red";
       txt = "Game Over!";
-      txt_width = ctx.measureText(txt).width;
-      ctx.fillText(txt, (WIDTH / 2) - (txt_width / 2), (HEIGHT / 2));
+      txt_width = play_ctx.measureText(txt).width;
+      play_ctx.fillText(txt, (WIDTH / 2) - (txt_width / 2), (HEIGHT / 2));
 
-      ctx.font = '22px Sono, sans-serif';
-      ctx.fillStyle = "yellow";
+      play_ctx.font = '22px Sono, sans-serif';
+      play_ctx.fillStyle = "yellow";
 
       resetGlobals();
       break;
@@ -113,16 +129,55 @@ function play() {
 
   if (objSettings.gameState !== 'running') {
     txt = "Press Space to start again";
-    txt_width = ctx.measureText(txt).width;
-    ctx.fillText(txt, (WIDTH / 2) - (txt_width / 2), (HEIGHT / 2) + 30);
+    txt_width = play_ctx.measureText(txt).width;
+    play_ctx.fillText(txt, (WIDTH / 2) - (txt_width / 2), (HEIGHT / 2) + 30);
   }
+  
+  stars.forEach( (star, index, array) => {
+    if (star.x <= 0) {
+      array.splice(index, 1);
+    }
+    star.draw();
+    star.drift();
+  })
+  
+  frame++;
   
   requestAnimationFrame(play);
 
 }
 
+// stars
+class Star {
+  constructor(x = 0) {
+    this.x = x > 0 ? x : Math.floor(Math.random() * WIDTH - 1);
+    this.y = Math.floor(Math.random() * HEIGHT - 1);
+    this.width = 1;
+    this.height = 1;
+    this.speed = Math.random() * (1 - 0.2) + 0.2;
+  }
+  
+  draw() {
+    back_ctx.fillStyle = 'white';
+    back_ctx.fillRect(this.x, this.y, this.width, this.height)
+  }
+  
+  drift() {
+    this.x -= this.speed;
+  }
+}
+
+function createStars() {
+  for (let i = 0; i < 100; i++) {
+    stars.push(new Star());
+  }
+}
+
+// create stars
+createStars();
+
 // start inital game
-play();
+requestAnimationFrame(play);
 
 // obstacles
 
@@ -159,8 +214,8 @@ class Obstacle {
   }
   place() {
     // place the obstacle on the canvas
-    ctx.fillStyle = 'orange';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    play_ctx.fillStyle = 'orange';
+    play_ctx.fillRect(this.x, this.y, this.width, this.height);
     // console.log(`obstacle x:${this.x} y:${this.y}`, `player x:${player.x} y:${player.y}`);
   }
 }
@@ -175,8 +230,8 @@ class Laser {
     this.speed = 2;
   }
   fire() {
-    ctx.fillStyle = 'blue';
-    ctx.fillRect(this.x, this.y, this.width, this.height);
+    play_ctx.fillStyle = 'blue';
+    play_ctx.fillRect(this.x, this.y, this.width, this.height);
     this.x += this.speed;
     
   }
@@ -269,7 +324,7 @@ function listener(event) {
   objSettings.keyCount++;
   
   // clear the canvas
-  // ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  // play_ctx.clearRect(0, 0, WIDTH, HEIGHT);
   // play();  
 }
 

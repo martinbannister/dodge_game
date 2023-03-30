@@ -4,6 +4,20 @@ body {
   font-family: Sono, Georgia, 'Times New Roman', Times, serif; /* the text font */
 }
 
-canvas {
+#canvases {
+  position: relative;
+}
+
+#canvases > canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+#play_area {
+  background-color: transparent;
+}
+
+#back {
   background-color: black;
 }
