@@ -19,9 +19,7 @@ const PLAYER_W = 50;
 const PLAYER_H = 50;
 
 let frame = 0;
-let oldTimeStamp;
-let secondsPassed;
-let fps;
+let animReqId;
 
 const obstacles = [];
 const lasers = [];
@@ -87,11 +85,6 @@ function play(timeStamp) {
         });
       });
       
-//    add new stars at the edge of the canvas
-      if (frame % 10 === 0) {
-        stars.push(new Star(WIDTH));
-      }
-      
 //    laser/ammo text placed here to draw on top of obstacles
       play_ctx.fillStyle = 'white';
       play_ctx.font = 'bold 25px Sono';
@@ -126,6 +119,11 @@ function play(timeStamp) {
       resetGlobals();
       break;
   }
+      
+//    add new stars at the edge of the canvas
+      if (frame % 10 === 0) {
+        stars.push(new Star(WIDTH));
+      }
 
   if (objSettings.gameState !== 'running') {
     txt = "Press Space to start again";
@@ -143,7 +141,7 @@ function play(timeStamp) {
   
   frame++;
   
-  requestAnimationFrame(play);
+  animReqId = requestAnimationFrame(play);
 
 }
 
@@ -167,6 +165,7 @@ class Star {
   }
 }
 
+// create initial stars
 function createStars() {
   for (let i = 0; i < 100; i++) {
     stars.push(new Star());
